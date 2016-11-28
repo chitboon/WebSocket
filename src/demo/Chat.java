@@ -14,14 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 @ServerEndpoint("/chat/{id}")
 public class Chat {
-
-    static ScheduledExecutorService timer =
-            Executors.newSingleThreadScheduledExecutor();
-
     private static Set<Session> allSessions = new HashSet<Session>();
-
-    DateTimeFormatter timeFormatter =
-            DateTimeFormatter.ofPattern("HH:mm:ss");
     @OnOpen
     public void register(@PathParam("id") String id, Session session){
         System.out.println("Registering id : " + id + "for session: " + session.getId());
@@ -33,7 +26,6 @@ public class Chat {
             System.out.println(ioe.getMessage());
         }
     }
-
 
     @OnMessage
     public void onMessage(String txt, Session session) throws IOException {
