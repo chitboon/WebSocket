@@ -1,12 +1,16 @@
 package demo;
 
+import com.google.gson.Gson;
+
 import javax.websocket.*;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -15,28 +19,37 @@ import java.util.concurrent.TimeUnit;
 @ServerEndpoint("/chat/{id}")
 public class Chat {
     private static Set<Session> allSessions = new HashSet<Session>();
+    private static List<String> userLists = new ArrayList<String>();
     @OnOpen
     public void register(@PathParam("id") String id, Session session){
-        System.out.println("Registering id : " + id + "for session: " + session.getId());
+        System.out.println("Registering id : " + id + " for session: " + session.getId());
         session.getUserProperties().put("id", id);
         allSessions.add(session);
-        try {
-            session.getBasicRemote().sendText(id + " registered successfully!");
-        } catch (IOException ioe) {
-            System.out.println(ioe.getMessage());
+        userLists.add(id);
+        Message m = new Message(Message.USER);
+        m.setMessages(userLists);
+        Gson gson = new Gson();
+        for (Session s : allSessions) {
+            try {
+                s.getBasicRemote().sendText(gson.toJson(m));
+                System.out.println("Sent to " + s.getUserProperties().get("id") + " : " + gson.toJson(m));
+            } catch (IOException ioe) {
+                System.out.println(ioe.getMessage());
+            }
         }
     }
 
     @OnMessage
     public void onMessage(String txt, Session session) throws IOException {
         System.out.println("Received : " + txt);
-        //allSessions = session.getOpenSessions();
-        System.out.println(session.getOpenSessions().size());
+        String id = (String)session.getUserProperties().get("id");
+        Message m = new Message(Message.MSG, id);
+        m.addMessage(txt);
+        Gson gson = new Gson();
         for (Session s: allSessions) {
             try{
-                String msg = (String)session.getUserProperties().get("id") + " >> " + txt;
-                s.getBasicRemote().sendText(msg);
-                System.out.println("Sent : " + msg);
+                s.getBasicRemote().sendText(gson.toJson(m));
+                System.out.println("Sent : " + gson.toJson(m));
             } catch (IOException ioe) {
                 System.out.println(ioe.getMessage());
             }
@@ -49,4 +62,5 @@ public class Chat {
         System.out.println("Closing a WebSocket due to " + reason.getReasonPhrase());
 
     }
+
 }

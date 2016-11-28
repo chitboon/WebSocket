@@ -11,13 +11,24 @@
         height: 400px;
         width: 400px;
         overflow-y: scroll;
+        float: left;
+        padding: 1em;
     }
+    #right {
+        margin-left: 300px;
+        border: 1px solid black;
+        padding: 1em;
+        max-width: 200px;
+        height: 400px;
+        overflow: hidden;
+    }
+
 
     .red {
         color : red;
     }
-    .black {
-        color : black;
+    .blue {
+        color : blue;
     }
 </style>
 
@@ -30,12 +41,19 @@
             ws = new WebSocket("ws://localhost:8080/chat/"+$('#id').val());
             ws.onmessage = function(evt)
             {
-                var msg = evt.data;
-
-                if (msg.startsWith($('#id').val()+ " >>")) {
-                    $('#tableDiv').append("<p class='red'>" + msg + "</p>");
-                } else {
-                    $('#tableDiv').append("<p class='black'>" + msg + "</p>");
+                var msg = JSON.parse(evt.data);
+                if (msg.type == 'USERS') {
+                    $('#right').empty();
+                    for (i in msg.messages) {
+                        $('#right').append("<p class='black'>" + msg.messages[i] + "</p>");
+                    }
+                } else if (msg.type == 'MSG') {
+                    var m = msg.sender + " >> " + msg.messages[0];
+                    if (msg.sender == $('#id').val()) {
+                        $('#tableDiv').append("<p class='red'>" + m + "</p>");
+                    } else {
+                        $('#tableDiv').append("<p class='blue'>" + m + "</p>");
+                    }
                 }
                 $('#tableDiv').animate({
                     scrollTop: $("#tableDiv")[0].scrollHeight
@@ -51,11 +69,11 @@
 </script>
 <body>
 <form>
-<input type="text" id="id" name="id" placeholder="Enter your id" /> <br>
-<input type="button" id="register" value="Register" /> <br>
-<div id='tableDiv'>
-
-</div>
+    <input type="text" id="id" name="id" placeholder="Enter your id" /> <br>
+    <input type="button" id="register" value="Register" /> <br>
+    <div id='tableDiv'>
+    </div>
+    <div id="right"></div>
     <!--
 <textarea id="chat" placeholder="Chat message appears here" rows="10" cols="50" readonly >
 ...
